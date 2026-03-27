@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>AdiśWiki</title>
+<style>
+body { font-family: Arial; margin:0; background:#f8f9fa; color:#000; transition: background 0.3s, color 0.3s; }
+header { background:#3366cc; color:white; padding:10px; text-align:center; display:flex; justify-content: space-between; align-items: center; }
+#app { padding:20px; }
+input, textarea { width:100%; margin-bottom:10px; padding:6px; font-size:14px; }
+textarea { height:150px; }
+button { padding:6px 10px; margin:3px; cursor:pointer; }
+.article { background:white; padding:10px; margin-top:10px; border:1px solid #ccc; position:relative; transition: background 0.3s, color 0.3s; }
+.delete-btn { position:absolute; right:10px; top:10px; background:red; color:white; border:none; cursor:pointer; }
+#admin-panel { background:#e2e2e2; padding:10px; margin-bottom:20px; transition: background 0.3s; }
+
+/* Tryb ciemny */
+body.dark { background:#121212; color:#f1f1f1; }
+body.dark .article { background:#1e1e1e; color:#f1f1f1; border:1px solid #333; }
+body.dark #admin-panel { background:#1e1e1e; color:#f1f1f1; }
+body.dark input, body.dark textarea { background:#2b2b2b; color:#f1f1f1; border:1px solid #444; }
+</style>
+</head>
+<body>
+
+<header>
+<h2>AdiśWiki</h2>
+<button onclick="toggleTheme()">🌙 Tryb ciemny/jasny</button>
+</header>
+
+<div id="app">
+
+<div id="admin-panel">
+<h3>Panel Admina</h3>
+<input type="password" id="admin-password" placeholder="Hasło admina">
+<button onclick="loginAdmin()">Zaloguj</button>
+<span id="admin-status" style="margin-left:10px; font-weight:bold;"></span>
+</div>
+
+<h3>Nowy artykuł</h3>
+<input id="title" placeholder="Tytuł artykułu">
+<textarea id="text" placeholder="Treść artykułu..."></textarea>
+<button onclick="addArticle()">Dodaj artykuł</button>
+
+<h3>Szukaj artykułu</h3>
+<input id="search" placeholder="Wpisz tytuł..." oninput="renderArticles()">
+
+<h3>Artykuły</h3>
+<div id="articles"></div>
+
+</div>
+
+<script>
+const ADMIN_PASSWORD = "Adminpanel48";
+let isAdmin = false;
+let articles = JSON.parse(localStorage.getItem("articles") || "[]");
+
+// ===== Tryb ciemny/jasny =====
+function toggleTheme(){
+  document.body.classList.toggle("dark");
+}
+
+// ===== Funkcje artykułów =====
+function saveArticles(){ localStorage.setItem("articles", JSON.stringify(articles)); }
+
+function renderArticles(){
+  const container = document.getElementById("articles");
+  container.innerHTML = "";
+
+  const query = document.getElementById("search")?.value.toLowerCase() || "";
+
+  articles
+    .filter(a => a.title.toLowerCase().includes(query))
+    .forEach((a,index)=>{
+      let div = document.createElement("div");
+      div.className = "article";
+      div.innerHTML = "<h3>"+a.title+"</h3><p>"+a.text.replace(/\n/g,"<br>")+"</p>";
+      if(isAdmin){
+        let btn = document.createElement("button");
+        btn.className="delete-btn";
+        btn.textContent="Usuń";
+        btn.onclick = ()=>{ articles.splice(index,1); saveArticles(); renderArticles(); };
+        div.appendChild(btn);
+      }
+      container.appendChild(div);
+    });
+}
+
+function addArticle(){
+  const title = document.getElementById("title").value;
+  const text = document.getElementById("text").value;
+  if(!title || !text){ alert("Uzupełnij pola!"); return; }
+  articles.unshift({ title, text });
+  saveArticles();
+  document.getElementById("title").value="";
+  document.getElementById("text").value="";
+  renderArticles();
+}
+
+function loginAdmin(){
+  const pass = document.getElementById("admin-password").value;
+  if(pass===ADMIN_PASSWORD){
+    isAdmin=true;
+    document.getElementById("admin-status").textContent="Zalogowany jako admin ✅";
+    renderArticles();
+  } else {
+    alert("Błędne hasło!");
+  }
+}
+
+renderArticles();
+</script>
+
+</body>
+</html>
