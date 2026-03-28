@@ -49,51 +49,37 @@ body.dark input, body.dark textarea { background:#2b2b2b; color:#f1f1f1; border:
 
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-firestore.js";
-
-// ===== Firebase config =====
-const firebaseConfig = {
-   apiKey: "AIzaSyAPGTGGXaG2k8rDWKcGW2kJTqi9YuwOEdM",
-  authDomain: "adiswiki-7a829.firebaseapp.com",
-  projectId: "adiswiki-7a829",
-  storageBucket: "adiswiki-7a829.firebasestorage.app",
-  messagingSenderId: "578408626245",
-  appId: "1:578408626245:web:c45716730030e7c3574b2c",
-  measurementId: "G-SRPH0EREFC"
-};
-
-// ===== Initialize Firebase =====
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const articlesCol = collection(db, "articles");
-
+<script>
 const ADMIN_PASSWORD = "Adminpanel48";
 let isAdmin = false;
-let articles = [];
 
-// ===== Tryb ciemny/jasny =====
+// Pobieramy artykuły z localStorage
+let articles = JSON.parse(localStorage.getItem("articles") || "[]");
+
+// Tryb ciemny/jasny
 function toggleTheme(){ document.body.classList.toggle("dark"); }
 
-// ===== Renderowanie artykułów =====
+// Renderowanie artykułów
 function renderArticles(){
   const container = document.getElementById("articles");
   container.innerHTML = "";
-  const queryText = document.getElementById("search")?.value.toLowerCase() || "";
+
+  const query = document.getElementById("search")?.value.toLowerCase() || "";
 
   articles
-    .filter(a => a.title.toLowerCase().includes(queryText))
-    .forEach(a=>{
+    .filter(a => a.title.toLowerCase().includes(query))
+    .forEach((a,index)=>{
       let div = document.createElement("div");
       div.className = "article";
-      div.innerHTML = `<h3>${a.title}</h3><p>${a.text.replace(/\n/g,"<br>")}</p>`;
+      div.innerHTML = "<h3>"+a.title+"</h3><p>"+a.text.replace(/\n/g,"<br>")+"</p>";
       if(isAdmin){
         let btn = document.createElement("button");
         btn.className="delete-btn";
         btn.textContent="Usuń";
-        btn.onclick = async ()=>{
-          await deleteDoc(doc(db, "articles", a.id));
+        btn.onclick = ()=>{
+          articles.splice(index,1);
+          saveArticles();
+          renderArticles();
         };
         div.appendChild(btn);
       }
@@ -101,19 +87,22 @@ function renderArticles(){
     });
 }
 
-// ===== Dodawanie artykułu =====
-async function addArticle(){
+// Zapis artykułów
+function saveArticles(){ localStorage.setItem("articles", JSON.stringify(articles)); }
+
+// Dodawanie artykułu
+function addArticle(){
   const title = document.getElementById("title").value.trim();
   const text = document.getElementById("text").value.trim();
   if(!title || !text){ alert("Uzupełnij pola!"); return; }
-  try {
-    await addDoc(articlesCol, { title, text, timestamp: Date.now() });
-    document.getElementById("title").value="";
-    document.getElementById("text").value="";
-  } catch(e){ console.error("Błąd dodawania artykułu:", e); }
+  articles.unshift({ title, text });
+  saveArticles();
+  document.getElementById("title").value="";
+  document.getElementById("text").value="";
+  renderArticles();
 }
 
-// ===== Panel admina =====
+// Logowanie admina
 function loginAdmin(){
   const pass = document.getElementById("admin-password").value;
   if(pass===ADMIN_PASSWORD){
@@ -125,13 +114,8 @@ function loginAdmin(){
   }
 }
 
-// ===== Nasłuchiwanie zmian Firestore live =====
-const q = query(articlesCol, orderBy("timestamp","desc"));
-onSnapshot(q, snapshot=>{
-  articles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  renderArticles();
-});
-
+// Wyświetlamy artykuły od razu
+renderArticles();
 </script>
 
 </body>
