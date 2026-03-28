@@ -78,7 +78,8 @@ function toggleTheme(){ document.body.classList.toggle("dark"); }
 // ===== Pobierz artykuły z Firebase =====
 function loadArticles(){
   db.ref('articles').on('value', (snapshot)=>{
-    articles = snapshot.val() ? Object.values(snapshot.val()) : [];
+    const data = snapshot.val();
+    articles = data ? Object.values(data) : [];
     renderArticles();
   });
 }
@@ -90,7 +91,7 @@ function renderArticles(){
   const query = document.getElementById("search")?.value.toLowerCase() || "";
   articles
     .filter(a => a.title.toLowerCase().includes(query))
-    .forEach((a,index)=>{
+    .forEach((a)=>{
       let div = document.createElement("div");
       div.className = "article";
       div.innerHTML = "<h3>"+a.title+"</h3><p>"+a.text.replace(/\n/g,"<br>")+"</p>";
@@ -98,9 +99,7 @@ function renderArticles(){
         let btn = document.createElement("button");
         btn.className="delete-btn";
         btn.textContent="Usuń";
-        btn.onclick = ()=>{
-          deleteArticle(a.id);
-        };
+        btn.onclick = ()=>{ deleteArticle(a.id); };
         div.appendChild(btn);
       }
       container.appendChild(div);
@@ -137,7 +136,7 @@ function loginAdmin(){
   }
 }
 
-// ===== Uruchamiamy =====
+// ===== START =====
 loadArticles();
 </script>
 
